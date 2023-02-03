@@ -108,7 +108,7 @@ Subject:            -
 Keywords:           -
 Created:            1/29/23, 3:35:48 PM
 Modified:           -
-Application:   	wkhtmltopdf 0.12.5
+Application:        wkhtmltopdf 0.12.5
 PDF producer:       Qt 4.8.7
 PDF version:        1.4
 Page count:         1
