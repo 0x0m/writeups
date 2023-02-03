@@ -1,6 +1,6 @@
 # TryHackMe: Sea Surfer Writeup
 
-This is a enumeration, SSRF, LFI, and privesc hacking challenge.
+This is an enumeration, SSRF, LFI, and privesc hacking challenge.
 
 ## Recon
 
