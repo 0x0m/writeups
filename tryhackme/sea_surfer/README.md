@@ -1,5 +1,7 @@
 # TryHackMe: Sea Surfer Writeup
 
+This is a enumeration, SSRF, LFI, and privesc hacking challenge.
+
 ## Recon
 
 We start out with a basic recon nmap scan. This reveals that there's an http and ssh service. Trying an anonymous logon to ssh doesn't work.
