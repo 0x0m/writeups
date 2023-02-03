@@ -100,20 +100,20 @@ Looking at the properties of the pdf file (on chrome: three dots top right corne
 
 ```
 Document properties
-File name:      29012023-9OZtn8ojlr6zLl4zY3mI.pdf
-File size:	    52.9 KB
-Title:          Receipt
-Author:	        -
-Subject:	      -
-Keywords:	      -
-Created:	      1/29/23, 3:35:48 PM
-Modified:	      -
+File name:          29012023-9OZtn8ojlr6zLl4zY3mI.pdf
+File size:          52.9 KB
+Title:              Receipt
+Author:             -
+Subject:            -
+Keywords:           -
+Created:            1/29/23, 3:35:48 PM
+Modified:           -
 Application:   	wkhtmltopdf 0.12.5
-PDF producer: 	Qt 4.8.7
-PDF version:  	1.4
-Page count: 	  1
-Page size:  	  8.26 × 11.69 in (portrait)
-Fast web view:	No
+PDF producer:       Qt 4.8.7
+PDF version:        1.4
+Page count:         1
+Page size:          8.26 × 11.69 in (portrait)
+Fast web view:      No
 ```
 
 A quick search reveals that this program is vulnerable to local file inclusion and SSRF. We can try to get the server to read us some data.
