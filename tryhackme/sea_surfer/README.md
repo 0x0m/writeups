@@ -90,7 +90,7 @@ The "internal" subdomain appears to generate PDFs based on the form.
 
 ![](images/4.PNG)
 
-We can try to inject <h1>asdf</h1> in a field to see if it will display in the outputted PDF file. It does. We can potentially attack this with SSRF or local file inclusion. Trying `<iframe height="2000" width="800" src="file:///etc/passwd"></iframe>` doesn't work though.
+We can try to inject `<h1>asdf</h1>` in a field to see if it will display in the outputted PDF file. It does. We can potentially attack this with SSRF or local file inclusion. Trying `<iframe height="2000" width="800" src="file:///etc/passwd"></iframe>` doesn't work though.
 
 ![](images/5.PNG)
 
