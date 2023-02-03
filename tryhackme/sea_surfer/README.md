@@ -45,7 +45,7 @@ Nmap done: 1 IP address (1 host up) scanned in 394.93 seconds
 
 Checking the website, there's only a default template page. But looking at the headers reveals a domain.
 
-![](1.PNG)
+![](images/1.PNG)
 
 ```
 ┌──(kali㉿kali)-[~]
