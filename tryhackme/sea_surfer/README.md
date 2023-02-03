@@ -1,3 +1,7 @@
+# TryHackMe: Sea Surfer Writeup
+
+## Recon
+
 We start out with a basic recon nmap scan. This reveals that there's an http and ssh service. Trying an anonymous logon to ssh doesn't work.
 
 ```
@@ -71,3 +75,8 @@ Checking the website, there's only a default template page. But looking at the h
 < 
 [...]
 ```
+
+
+We add this domain to our hosts file with `echo "10.18.72.160   seasurfer.thm" >> /etc/hosts`.
+
+We click around the website. Check all the posts and info. It says it was made by "kyle", we'll keep that info for later. The comments also reveal a subdomain, which we also add to our hosts file with `echo "10.18.72.160   internal.seasurfer.thm" >> /etc/hosts`.
